@@ -1,6 +1,7 @@
-# VIVID area maps
+# VIVID areas maps
 
-A repo for processing geographic data and producing maps to support the 
+A repo for processing geographic data and producing maps indicating the VIVID 
+study areas and to support the 
 [VIVID postcode checker](https://github.com/VIVIDstudy/postcode-checker).
 
 For more information about the VIVID study and what data it is using, visit
