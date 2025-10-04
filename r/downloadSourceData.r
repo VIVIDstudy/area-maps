@@ -60,12 +60,29 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
   uk_countries_goem <- sf::st_read(uk_countries_goem_filepath,
                                    query = "SELECT * FROM CTRY_DEC_2024_UK_BSC")
 
-  saveRDS(uk_countries_goem_filepath,
+  saveRDS(uk_countries_goem,
           file = paste0(data_directory,
                         "/uk_countries_goem.rds"))
 
   rm(uk_countries_goem,
      uk_countries_goem_filepath)
+
+  # Towns and Cities (December 2015) boundaries
+
+  towns_cities_goem_filepath <- downloadArcGISGeoPackage("63a109c64a64410488d39c886152c162",
+                                                         directory_path = data_raw_directory)
+
+  towns_cities_goem <- sf::st_read(towns_cities_goem_filepath,
+                                   query = "SELECT * FROM TCITY_2015_EW_BGG")
+
+  saveRDS(towns_cities_goem,
+          file = paste0(data_directory,
+                        "/towns_cities_goem.rds"))
+
+  rm(towns_cities_goem,
+     towns_cities_goem_filepath)
+
+
 
   # OHID MSOA catchment populations
   # Download from https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl/file/976234504165

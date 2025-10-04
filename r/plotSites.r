@@ -22,19 +22,19 @@ plotSites <- function(sites_csv,
 
   sites_map <- composePlot(geom_data)
 
-    if(!is.na(img_name) & length(img_name) == 1) {
+  if(!is.na(img_name) & length(img_name) == 1) {
 
-      sites_map_print <- composePlot(geom_data,
-                                     font_size = 0.015 * getHeightInPts(img_height, img_dim_units),
-                                     for_print = TRUE)
+    sites_map_print <- composePlot(geom_data,
+                                   font_size = 0.015 * getHeightInPts(img_height, img_dim_units),
+                                   for_print = TRUE)
 
-      ggplot2::ggsave(filename = paste0(img_name, ".", img_type),
-                      plot = sites_map_print,
-                      width = img_width,
-                      height = img_height,
-                      units = img_dim_units,
-                      create.dir = TRUE)
-    }
+    ggplot2::ggsave(filename = paste0(img_name, ".", img_type),
+                    plot = sites_map_print,
+                    width = img_width,
+                    height = img_height,
+                    units = img_dim_units,
+                    create.dir = TRUE)
+  }
 
   return(sites_map)
 }
@@ -45,34 +45,31 @@ composePlot <- function(geom_data,
 
   plot_font_size_scale <- 1 / (ggplot2::.pt)^as.integer(for_print)
 
-  plot <- ggplot2::ggplot(geom_data[["sites_geom"]]) +
-    ggplot2::geom_sf(data = geom_data[["england_wales_population_density_geom"]],
-                     ggplot2::aes(fill = population_density),
+  plot <- ggplot2::ggplot() +
+    ggplot2::geom_sf(data = geom_data[["uk_countries_goem"]],
+                     fill = "#fee8c8") +
+    ggplot2::geom_sf(data = geom_data[["towns_cities_goem"]],
+                     fill = "#333",
+                     alpha = 0.6,
                      lwd = 0) +
-    ggplot2::scale_fill_gradient(low = "#fee8c8",
-                                 high = "#e34a33",
-                                 guide = "none") +
-    ggplot2::geom_sf(data = geom_data[["england_regions_goem"]],
-                     fill = NA,
-                     alpha = 0.4) +
-    ggplot2::geom_sf(ggplot2::aes(colour = notes),
-                     shape = 21,
-                     fill = NA,
-                     stroke = 0.6 * plot_font_size_scale,
-                     size = 1.5 * plot_font_size_scale) +
-    ggrepel::geom_text_repel(ggplot2::aes(label = site_name,
-                                          colour = notes,
-                                          geometry = geometry),
-                             stat = "sf_coordinates",
-                             size = 3 * plot_font_size_scale,
-                             min.segment.length = 0,
-                             segment.size = 0.5 * plot_font_size_scale) +
-    ggplot2::scale_colour_manual(values = c("National site" = "blue",
-                                            "New contributor" = "purple"),
-                                 na.value = "black",
-                                 guide = "none") +
+    ggplot2::geom_sf(data = geom_data[["catchment_areas_geom_27700"]],
+                     fill = "#cc4444",
+                     alpha = 0.4,
+                     lwd = 0.1) +
+    ggplot2::geom_text(data = geom_data[["towns_cities_goem"]][!is.na(geom_data[["towns_cities_goem"]]$easting),],
+                       ggplot2::aes(x = easting,
+                                    y = northing,
+                                    label = TCITY15NM),
+                       colour = "#333",
+                       size = 3 * plot_font_size_scale,
+                       hjust = 0,
+                       nudge_x = 5000,
+                       nudge_y = -5000) +
     ggplot2::theme_minimal(base_size = font_size) +
-    ggplot2::coord_sf(crs = 27700) +
+    ggplot2::coord_sf(crs = 27700,
+                      xlim = c(-25000, 775000), #xlim = c(068000, 667000),
+                      ylim = c(0, 665000),
+                      expand = FALSE) +
     ggplot2::theme(axis.title.x = ggplot2::element_blank(),
                    axis.text.x = ggplot2::element_blank(),
                    axis.title.y = ggplot2::element_blank(),
@@ -82,10 +79,9 @@ composePlot <- function(geom_data,
                                                            linewidth = 0),
                    plot.caption = ggplot2::element_text(hjust = 0,
                                                         colour = "#666")) +
-    ggplot2::labs(caption = paste(c("Contains OS data \u00A9 Crown copyright and database right 2025",
-                                    "Contains Royal Mail data \u00A9 Royal Mail copyright and Database right 2025",
-                                    "Contains information from NHS England licenced under the Open Government Licence v3.0",
-                                    "Contains data from the Office for National Statistics licensed under the Open Government Licence v3.0"),
+    ggplot2::labs(caption = paste(c("Contains Royal Mail data \u00A9 Royal Mail copyright and Database right 2025",
+                                    "Contains Ordnance Survey data \u00A9 Crown copyright and database right 2025",
+                                    "Source: Office for National Statistics licensed under the Open Government Licence v3.0"),
                                   collapse = "\n"))
 
   return(plot)

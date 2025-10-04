@@ -44,6 +44,7 @@ prepareGeoData <- function(sites_csv,
                                       by.x = "MSOA11CD",
                                       by.y = "msoa11",
                                       all = FALSE) |>
+    sf::st_buffer(20) |>
     sf::st_union() |>
     sf::st_sf()
 
@@ -107,11 +108,53 @@ prepareGeoData <- function(sites_csv,
                                      "osnrth1m",
                                      "ods_name") := NULL]
 
+  uk_countries_goem <- readRDS(paste0(data_directory,
+                                      "/uk_countries_goem.rds"))
+
+  uk_countries_goem <- uk_countries_goem[uk_countries_goem$CTRY24NM != "Northern Ireland",]
 
 
+  towns_cities_goem <- readRDS(paste0(data_directory,
+                                      "/towns_cities_goem.rds"))
 
-        return(list(sites_geom = sites_geom,
-                    england_wales_population_density_geom = england_wales_population_density_geom,
-                    england_regions_goem = england_regions_goem))
+  towns_cities_centroids_geom <- towns_cities_goem |>
+    sf::st_centroid()
+
+  towns_cities_centroids_bng <- towns_cities_centroids_geom |>
+    sf::st_coordinates() |>
+    data.table::data.table() |>
+    cbind(TCITY15NM = towns_cities_centroids_geom$TCITY15NM)
+
+  data.table::setnames(towns_cities_centroids_bng,
+                       c("X",
+                         "Y"),
+                       c("easting",
+                         "northing"))
+
+  towns_cities_centroids_bng <- towns_cities_centroids_bng[TCITY15NM %in% c("London",
+                                                                            "Birmingham",
+                                                                            "Bristol",
+                                                                            "Cambridge",
+                                                                            "Bracknell",
+                                                                            "Leeds",
+                                                                            "Leicester",
+                                                                            "Liverpool",
+                                                                            "Manchester",
+                                                                            "Newcastle upon Tyne",
+                                                                            "Nottingham",
+                                                                            "Southampton",
+                                                                            "Plymouth",
+                                                                            "Sheffield")]
+
+  towns_cities_goem <- merge(towns_cities_goem,
+                             towns_cities_centroids_bng,
+                             by = "TCITY15NM",
+                             all.x = TRUE)
+
+  geom_data <- list(uk_countries_goem = uk_countries_goem,
+                    catchment_areas_geom_27700 = catchment_areas_geom_27700,
+                    towns_cities_goem = towns_cities_goem)
+
+  return(geom_data)
 
 }
