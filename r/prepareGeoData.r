@@ -48,8 +48,8 @@ prepareGeoData <- function(sites_csv,
     sf::st_union() |>
     sf::st_sf()
 
-  site_catchment_areas_4326 <- sf::st_transform(catchment_areas_geom_27700,
-                                                4326)
+  site_catchment_areas_4326 <- catchment_areas_geom_27700 |>
+    sf::st_transform(4326)
 
   saveRDS(site_catchment_areas_4326,
           paste0(data_directory,
@@ -64,13 +64,13 @@ prepareGeoData <- function(sites_csv,
 
   postcode_to_bng_msoa11_lookup <- postcode_to_bng_msoa11_lookup[substr(postcode, 1, 4) != "ZZ99"]
 
-  postcode_geom_4326 <- sf::st_as_sf(postcode_to_bng_msoa11_lookup[!is.na(oseast1m),
-                                                                   .(postcode,
-                                                                     oseast1m,
-                                                                     osnrth1m)],
-                                     coords = c("oseast1m",
-                                                "osnrth1m"),
-                                     crs = 27700) |>
+  postcode_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m),
+                                                      .(postcode,
+                                                        oseast1m,
+                                                        osnrth1m)] |>
+    sf::st_as_sf(coords = c("oseast1m",
+                            "osnrth1m"),
+                 crs = 27700) |>
     sf::st_transform(4326)
 
   postcode_latlong <- postcode_geom_4326 |>
@@ -84,29 +84,78 @@ prepareGeoData <- function(sites_csv,
                        c("longitude",
                          "latitude"))
 
-  rm(postcode_geom_4326)
-
-
-  catchment_area_postcode_lookup <- merge(postcode_to_bng_msoa11_lookup,
+  postcode_catchment_area_lookup <- merge(postcode_to_bng_msoa11_lookup,
                                          catchment_areas,
                                          by = "msoa11",
                                          all.x = TRUE)
 
-  catchment_area_postcode_lookup <- merge(catchment_area_postcode_lookup,
+  postcode_catchment_area_lookup <- merge(postcode_catchment_area_lookup,
                                           postcode_latlong,
                                           by = "postcode",
                                           all.x = TRUE)
 
   rm(postcode_to_bng_msoa11_lookup,
-     postcode_latlong)
-
+     postcode_latlong,
+     catchment_areas)
   gc()
 
-  catchment_area_postcode_lookup[, in_catchment_area := !is.na(ods_name)]
-  catchment_area_postcode_lookup[, c("msoa11",
+  postcode_catchment_area_lookup[, in_catchment_area := !is.na(ods_name)]
+  postcode_catchment_area_lookup[, c("msoa11",
                                      "oseast1m",
                                      "osnrth1m",
                                      "ods_name") := NULL]
+
+  postcode_district_catchment_area_lookup <- postcode_catchment_area_lookup[, .(in_catchment_area,
+                                                                                postcode_district = substr(postcode,
+                                                                                                           1,
+                                                                                                           nchar(postcode) - 4))][, .(in_catchment_area = any(in_catchment_area)),
+                                                                                                                                  by = postcode_district]
+  postcode_geom_4326$postcode_district = substr(postcode_geom_4326$postcode,
+                                                1,
+                                                nchar(postcode_geom_4326$postcode) - 4)
+
+  postcode_districts <- unique(postcode_geom_4326$postcode_district)
+
+  postcode_districts_matrix <- sapply(postcode_districts,
+                                    function(district, postcode_points_geom) {
+                                      return(postcode_points_geom[postcode_points_geom$postcode_district == district,] |>
+                                               sf::st_union() |>
+                                               sf::st_convex_hull() |>
+                                               sf::st_centroid() |>
+                                               sf::st_coordinates())
+  },
+  postcode_points_geom = postcode_geom_4326)
+
+  postcode_districts_coords <- t(postcode_districts_matrix) |>
+    data.table::data.table() |>
+    cbind()
+
+  data.table::setnames(postcode_districts_coords,
+                       c("longitude",
+                         "latitude"))
+
+  postcode_districts_coords[, postcode_district := colnames(postcode_districts_matrix)]
+
+  postcode_district_catchment_area_lookup <- merge(postcode_district_catchment_area_lookup,
+                                                   postcode_districts_coords,
+                                                   by = "postcode_district",
+                                                   all.x = TRUE)
+
+  rm(postcode_geom_4326,
+     postcode_districts_matrix,
+     postcode_districts_coords)
+
+  saveRDS(postcode_catchment_area_lookup,
+          file = paste0(data_directory,
+                        "/postcode_catchment_area_lookup.rds"))
+
+  saveRDS(postcode_district_catchment_area_lookup,
+          file = paste0(data_directory,
+                        "/postcode_district_catchment_area_lookup.rds"))
+
+  rm(postcode_catchment_area_lookup,
+     postcode_district_catchment_area_lookup)
+
 
   uk_countries_goem <- readRDS(paste0(data_directory,
                                       "/uk_countries_goem.rds"))
