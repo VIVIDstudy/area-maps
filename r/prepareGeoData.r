@@ -10,6 +10,7 @@
 prepareGeoData <- function(sites_csv,
                            data_directory = "data") {
 
+# Catchment area lookup
   sites <- data.table::fread(sites_csv,
                              select = c("site_name",
                                         "ods_name",
@@ -35,7 +36,7 @@ prepareGeoData <- function(sites_csv,
   rm(sites,
      nhs_trusts_catchment_areas)
 
-
+  # Catchment area boundaries
   england_wales_msoa11_goem <- readRDS(file = paste0(data_directory,
                                                      "/england_wales_msoa11_goem.rds"))
 
@@ -58,7 +59,7 @@ prepareGeoData <- function(sites_csv,
   rm(england_wales_msoa11_goem,
      site_catchment_areas_4326)
 
-
+  # postcode lookups
   postcode_to_bng_msoa11_lookup <- readRDS(file = paste0(data_directory,
                                                          "/postcode_to_bng_msoa11_lookup.rds"))
 
@@ -99,17 +100,25 @@ prepareGeoData <- function(sites_csv,
      catchment_areas)
   gc()
 
-  postcode_catchment_area_lookup[, in_catchment_area := !is.na(ods_name)]
+  postcode_catchment_area_lookup[, ':=' (in_catchment_area = !is.na(ods_name),
+                                         in_england = (substr(msoa11, 1, 1) == "E"))]
+
+  postcode_district_catchment_area_lookup <- postcode_catchment_area_lookup[, .(in_catchment_area,
+                                                                                in_england,
+                                                                                postcode_district = substr(postcode,
+                                                                                                           1,
+                                                                                                           nchar(postcode) - 4))][, .(in_catchment_area = any(in_catchment_area),
+                                                                                                                                      in_england = any(in_england)),
+                                                                                                                                  by = postcode_district]
+
+  postcode_catchment_area_lookup <- postcode_catchment_area_lookup[(in_england)]
+
   postcode_catchment_area_lookup[, c("msoa11",
                                      "oseast1m",
                                      "osnrth1m",
-                                     "ods_name") := NULL]
+                                     "ods_name",
+                                     "in_england") := NULL]
 
-  postcode_district_catchment_area_lookup <- postcode_catchment_area_lookup[, .(in_catchment_area,
-                                                                                postcode_district = substr(postcode,
-                                                                                                           1,
-                                                                                                           nchar(postcode) - 4))][, .(in_catchment_area = any(in_catchment_area)),
-                                                                                                                                  by = postcode_district]
   postcode_geom_4326$postcode_district = substr(postcode_geom_4326$postcode,
                                                 1,
                                                 nchar(postcode_geom_4326$postcode) - 4)
@@ -127,8 +136,7 @@ prepareGeoData <- function(sites_csv,
   postcode_points_geom = postcode_geom_4326)
 
   postcode_districts_coords <- t(postcode_districts_matrix) |>
-    data.table::data.table() |>
-    cbind()
+    data.table::data.table()
 
   data.table::setnames(postcode_districts_coords,
                        c("longitude",
@@ -157,12 +165,13 @@ prepareGeoData <- function(sites_csv,
      postcode_district_catchment_area_lookup)
 
 
+  # Country boundaries
   uk_countries_goem <- readRDS(paste0(data_directory,
                                       "/uk_countries_goem.rds"))
 
   uk_countries_goem <- uk_countries_goem[uk_countries_goem$CTRY24NM != "Northern Ireland",]
 
-
+  # Town and city boundaries
   towns_cities_goem <- readRDS(paste0(data_directory,
                                       "/towns_cities_goem.rds"))
 
