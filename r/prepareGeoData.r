@@ -85,6 +85,9 @@ prepareGeoData <- function(sites_csv,
                        c("longitude",
                          "latitude"))
 
+  postcode_latlong[, ':=' (longitude = round(longitude, 5),
+                           latitude = round(latitude, 5))]
+
   postcode_catchment_area_lookup <- merge(postcode_to_bng_msoa11_lookup,
                                          catchment_areas,
                                          by = "msoa11",
@@ -142,7 +145,9 @@ prepareGeoData <- function(sites_csv,
                        c("longitude",
                          "latitude"))
 
-  postcode_districts_coords[, postcode_district := colnames(postcode_districts_matrix)]
+  postcode_districts_coords[, ':=' (longitude = round(longitude, 5),
+                                    latitude = round(latitude, 5),
+                                    postcode_district = colnames(postcode_districts_matrix))]
 
   postcode_district_catchment_area_lookup <- merge(postcode_district_catchment_area_lookup,
                                                    postcode_districts_coords,
