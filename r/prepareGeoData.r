@@ -104,23 +104,23 @@ prepareGeoData <- function(sites_csv,
   gc()
 
   postcode_catchment_area_lookup[, ':=' (in_catchment_area = !is.na(ods_name),
-                                         in_england = (substr(msoa11, 1, 1) == "E"))]
+                                         postcode_district = substr(postcode,
+                                                                    1,
+                                                                    nchar(postcode) - 4))]
 
-  postcode_district_catchment_area_lookup <- postcode_catchment_area_lookup[, .(in_catchment_area,
-                                                                                in_england,
-                                                                                postcode_district = substr(postcode,
-                                                                                                           1,
-                                                                                                           nchar(postcode) - 4))][, .(in_catchment_area = any(in_catchment_area),
-                                                                                                                                      in_england = any(in_england)),
-                                                                                                                                  by = postcode_district]
+  postcode_catchment_area_lookup[, district_in_catchment_area := any(in_catchment_area),
+                                 by = postcode_district]
 
-  postcode_catchment_area_lookup <- postcode_catchment_area_lookup[(in_england)]
+  postcode_district_catchment_area_lookup <- unique(postcode_catchment_area_lookup[, .(postcode_district,
+                                                                                       in_catchment_area = district_in_catchment_area)])
+
+  postcode_catchment_area_lookup <- postcode_catchment_area_lookup[(district_in_catchment_area)]
 
   postcode_catchment_area_lookup[, c("msoa11",
                                      "oseast1m",
                                      "osnrth1m",
                                      "ods_name",
-                                     "in_england") := NULL]
+                                     "district_in_catchment_area") := NULL]
 
   postcode_geom_4326$postcode_district = substr(postcode_geom_4326$postcode,
                                                 1,
@@ -132,7 +132,6 @@ prepareGeoData <- function(sites_csv,
                                     function(district, postcode_points_geom) {
                                       return(postcode_points_geom[postcode_points_geom$postcode_district == district,] |>
                                                sf::st_union() |>
-                                               sf::st_convex_hull() |>
                                                sf::st_centroid() |>
                                                sf::st_coordinates())
   },
