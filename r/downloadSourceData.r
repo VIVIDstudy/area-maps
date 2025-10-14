@@ -82,6 +82,34 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
   rm(towns_cities_goem,
      towns_cities_goem_filepath)
 
+  # ONS mid-year 2020 MSOA (2011) population estimates
+
+  # utils::download.file("https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimates/mid2020sape23dt4/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx",
+  #                      paste0(data_raw_directory,
+  #                             "/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx"),
+  #                      headers = c("User-Agent" = getUserAgent()))
+
+  msoa11_2020_population_filename <- paste0(data_raw_directory,
+                                    "/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx")
+
+  msoa11_2020_population <- openxlsx::read.xlsx(msoa11_2020_population_filename,
+                                                sheet = "Mid-2020 Persons",
+                                                startRow = 5,
+                                                cols = c(1,7)) |>
+    data.table::setDT()
+
+  data.table::setnames(msoa11_2020_population,
+                       c("MSOA.Code",
+                         "All.Ages"),
+                       c("msoa11",
+                         "population"))
+
+  saveRDS(msoa11_2020_population,
+          file = paste0(data_directory,
+                        "/msoa11_2020_population.rds"))
+
+  rm(msoa11_2020_population,
+     msoa11_2020_population_filename)
 
 
   # OHID MSOA catchment populations

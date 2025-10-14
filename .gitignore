@@ -5,4 +5,5 @@
 data-raw/*
 !data-raw/sites-example.csv
 data/*
+data-out/*
 img/*
