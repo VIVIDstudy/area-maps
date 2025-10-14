@@ -179,6 +179,9 @@ prepareGeoData <- function(sites_csv,
   towns_cities_goem <- readRDS(paste0(data_directory,
                                       "/towns_cities_goem.rds"))
 
+  towns_cities_goem <- towns_cities_goem |>
+    sf::st_convex_hull()
+
   towns_cities_centroids_geom <- towns_cities_goem |>
     sf::st_centroid()
 

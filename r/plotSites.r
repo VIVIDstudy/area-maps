@@ -67,7 +67,7 @@ composePlot <- function(geom_data,
                        nudge_y = -5000) +
     ggplot2::theme_minimal(base_size = font_size) +
     ggplot2::coord_sf(crs = 27700,
-                      xlim = c(-25000, 775000), #xlim = c(068000, 667000),
+                      xlim = c(-25000, 775000),
                       ylim = c(0, 665000),
                       expand = FALSE) +
     ggplot2::theme(axis.title.x = ggplot2::element_blank(),
