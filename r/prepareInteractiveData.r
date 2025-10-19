@@ -44,7 +44,7 @@ prepareInteractiveData <- function(sites_csv,
   ## Remove NHS pseudo-postcodes
   postcode_to_bng_msoa11_lookup <- postcode_to_bng_msoa11_lookup[substr(postcode, 1, 4) != "ZZ99"]
 
-  postcode_gb_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) != "BT",
+  postcode_uk_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) != "BT",
                                                          .(postcode,
                                                            oseast1m,
                                                            osnrth1m)] |>
@@ -53,21 +53,21 @@ prepareInteractiveData <- function(sites_csv,
                  crs = 27700) |>
     sf::st_transform(4326)
 
-  postcode_ni_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) == "BT",
-                                                         .(postcode,
-                                                           oseast1m,
-                                                           osnrth1m)] |>
-    sf::st_as_sf(coords = c("oseast1m",
-                            "osnrth1m"),
-                 crs = 29902) |>
-    sf::st_transform(4326)
-
-  postcode_uk_geom_4326 <- rbind(postcode_gb_geom_4326,
-                                 postcode_ni_geom_4326)
-
-  rm(postcode_gb_geom_4326,
-     postcode_ni_geom_4326)
-  gc()
+  # postcode_ni_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) == "BT",
+  #                                                        .(postcode,
+  #                                                          oseast1m,
+  #                                                          osnrth1m)] |>
+  #   sf::st_as_sf(coords = c("oseast1m",
+  #                           "osnrth1m"),
+  #                crs = 29902) |>
+  #   sf::st_transform(4326)
+  #
+  # postcode_uk_geom_4326 <- rbind(postcode_gb_geom_4326,
+  #                                postcode_ni_geom_4326)
+  #
+  # rm(postcode_gb_geom_4326,
+  #    postcode_ni_geom_4326)
+  # gc()
 
   postcode_latlong <- postcode_uk_geom_4326 |>
     sf::st_coordinates() |>
