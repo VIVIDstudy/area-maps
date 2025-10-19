@@ -59,7 +59,7 @@ prepareInteractiveData <- function(sites_csv,
                                                            osnrth1m)] |>
     sf::st_as_sf(coords = c("oseast1m",
                             "osnrth1m"),
-                 crs = 2157) |>
+                 crs = 29902) |>
     sf::st_transform(4326)
 
   postcode_uk_geom_4326 <- rbind(postcode_gb_geom_4326,
