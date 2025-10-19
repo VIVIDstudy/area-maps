@@ -1,13 +1,20 @@
 library(data.table)
-source("R/downloadArcGISGeoPackage.r")
-source("R/downloadExtractZipFile.r")
-source("R/downloadSourceData.r")
-source("R/getUserAgent.r")
-source("R/prepareGeoData.r")
+source("r/downloadArcGISGeoPackage.r")
+source("r/downloadExtractZipFile.r")
+source("r/downloadSourceData.r")
+source("r/getUserAgent.r")
+source("r/prepareGeoData.r")
+
+
+source("r/getNhsCatchmentAreas.r")
+source("r/getCatchmentAreaGeoms.r")
+
+source("r/calcCatchmentPopulations.r")
 
 
 downloadSourceData()
 prepareGeoData(sites_csv = "data-raw/sites.csv")
+prepareInteractiveData(sites_csv = "data-raw/sites.csv")
 
 plotSites(sites_csv = "data-raw/sites.csv",
           data_directory = "data",

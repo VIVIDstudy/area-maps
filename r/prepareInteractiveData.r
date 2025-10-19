@@ -8,8 +8,8 @@
 #'
 #' @examples
 prepareInteractiveData <- function(sites_csv,
-                           data_directory = "data",
-                           dataout_directory = "data-out") {
+                                   data_directory = "data",
+                                   dataout_directory = "data-out") {
 
   if(!dir.exists(dataout_directory)) dir.create(dataout_directory)
 
@@ -41,21 +41,38 @@ prepareInteractiveData <- function(sites_csv,
   postcode_to_bng_msoa11_lookup <- readRDS(file = paste0(data_directory,
                                                          "/postcode_to_bng_msoa11_lookup.rds"))
 
+  ## Remove NHS pseudo-postcodes
   postcode_to_bng_msoa11_lookup <- postcode_to_bng_msoa11_lookup[substr(postcode, 1, 4) != "ZZ99"]
 
-  postcode_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m),
-                                                      .(postcode,
-                                                        oseast1m,
-                                                        osnrth1m)] |>
+  postcode_gb_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) != "BT",
+                                                         .(postcode,
+                                                           oseast1m,
+                                                           osnrth1m)] |>
     sf::st_as_sf(coords = c("oseast1m",
                             "osnrth1m"),
                  crs = 27700) |>
     sf::st_transform(4326)
 
-  postcode_latlong <- postcode_geom_4326 |>
+  postcode_ni_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) == "BT",
+                                                         .(postcode,
+                                                           oseast1m,
+                                                           osnrth1m)] |>
+    sf::st_as_sf(coords = c("oseast1m",
+                            "osnrth1m"),
+                 crs = 2157) |>
+    sf::st_transform(4326)
+
+  postcode_uk_geom_4326 <- rbind(postcode_gb_geom_4326,
+                                 postcode_ni_geom_4326)
+
+  rm(postcode_gb_geom_4326,
+     postcode_ni_geom_4326)
+  gc()
+
+  postcode_latlong <- postcode_uk_geom_4326 |>
     sf::st_coordinates() |>
     data.table::data.table() |>
-    cbind(postcode = postcode_geom_4326$postcode)
+    cbind(postcode = postcode_uk_geom_4326$postcode)
 
   data.table::setnames(postcode_latlong,
                        c("X",
@@ -100,11 +117,11 @@ prepareInteractiveData <- function(sites_csv,
                                      "ods_name",
                                      "district_in_catchment_area") := NULL]
 
-  postcode_geom_4326$postcode_district = substr(postcode_geom_4326$postcode,
+  postcode_uk_geom_4326$postcode_district = substr(postcode_uk_geom_4326$postcode,
                                                 1,
-                                                nchar(postcode_geom_4326$postcode) - 4)
+                                                nchar(postcode_uk_geom_4326$postcode) - 4)
 
-  postcode_districts <- unique(postcode_geom_4326$postcode_district)
+  postcode_districts <- unique(postcode_uk_geom_4326$postcode_district)
 
   postcode_districts_matrix <- sapply(postcode_districts,
                                       function(district, postcode_points_geom) {
@@ -113,7 +130,7 @@ prepareInteractiveData <- function(sites_csv,
                                                  sf::st_centroid() |>
                                                  sf::st_coordinates())
                                       },
-                                      postcode_points_geom = postcode_geom_4326)
+                                      postcode_points_geom = postcode_uk_geom_4326)
 
   postcode_districts_coords <- t(postcode_districts_matrix) |>
     data.table::data.table()
@@ -131,7 +148,7 @@ prepareInteractiveData <- function(sites_csv,
                                                    by = "postcode_district",
                                                    all.x = TRUE)
 
-  rm(postcode_geom_4326,
+  rm(postcode_uk_geom_4326,
      postcode_districts_matrix,
      postcode_districts_coords)
 
