@@ -84,10 +84,10 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
 
   # ONS mid-year 2020 MSOA (2011) population estimates
 
-  # utils::download.file("https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimates/mid2020sape23dt4/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx",
-  #                      paste0(data_raw_directory,
-  #                             "/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx"),
-  #                      headers = c("User-Agent" = getUserAgent()))
+  utils::download.file("https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimates/mid2020sape23dt4/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx",
+                       paste0(data_raw_directory,
+                              "/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx"),
+                       headers = c("User-Agent" = getUserAgent()))
 
   msoa11_2020_population_filename <- paste0(data_raw_directory,
                                     "/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx")
