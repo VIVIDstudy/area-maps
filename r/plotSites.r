@@ -10,15 +10,13 @@
 #' @return ggplot2 plot
 #' @export
 plotSites <- function(sites_csv,
-                      data_directory,
+                      geom_data,
                       img_name = NA,
                       img_type = "png",
                       img_width = 8.5,
                       img_height = 10.2,
                       img_dim_units = "cm") {
 
-  geom_data <- prepareGeoData(sites_csv,
-                              data_directory)
 
   sites_map <- composePlot(geom_data)
 
@@ -47,24 +45,25 @@ composePlot <- function(geom_data,
 
   plot <- ggplot2::ggplot() +
     ggplot2::geom_sf(data = geom_data[["uk_countries_goem"]],
-                     fill = "#fee8c8") +
+                     fill = "#fee8c8",
+                     colour = "#aaa") +
     ggplot2::geom_sf(data = geom_data[["towns_cities_goem"]],
-                     fill = "#333",
+                     fill = "#666",
                      alpha = 0.6,
                      lwd = 0) +
     ggplot2::geom_sf(data = geom_data[["catchment_areas_geom_27700"]],
-                     fill = "#cc4444",
-                     alpha = 0.4,
-                     lwd = 0.1) +
+                     fill = "#520c89",
+                     alpha = 0.5,
+                     colour = NA) +
     ggplot2::geom_text(data = geom_data[["towns_cities_goem"]][!is.na(geom_data[["towns_cities_goem"]]$easting),],
                        ggplot2::aes(x = easting,
                                     y = northing,
                                     label = TCITY15NM),
                        colour = "#333",
-                       size = 3 * plot_font_size_scale,
+                       size = 3.5 * plot_font_size_scale,
+                       fontface = "bold",
                        hjust = 0,
-                       nudge_x = 5000,
-                       nudge_y = -5000) +
+                       nudge_x = 10000) +
     ggplot2::theme_minimal(base_size = font_size) +
     ggplot2::coord_sf(crs = 27700,
                       xlim = c(-25000, 775000),
