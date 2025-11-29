@@ -139,7 +139,33 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
           file = paste0(data_directory,
                         "/nhs_trusts_catchment_areas.rds"))
 
-  rm(nhs_trusts_catchment_areas,
+  rm(nhs_trusts_catchment_areas)
+
+
+  nhs_trusts_patients <- openxlsx::read.xlsx(nhs_trusts_catchment_areas_filename,
+                                                    sheet = "All Admissions",
+                                                    cols = c(1,3:6,11)) |>
+    data.table::setDT()
+
+  data.table::setnames(nhs_trusts_patients,
+                       c("CatchmentYear",
+                         "msoa",
+                         "TrustCode",
+                         "TrustName",
+                         "patients",
+                         "FPTP"),
+                       c("year",
+                         "msoa11",
+                         "ods_code",
+                         "trust_name",
+                         "msoa_trust_patients_3years",
+                         "largest_share_in_msoa"))
+
+  saveRDS(nhs_trusts_patients,
+          file = paste0(data_directory,
+                        "/nhs_trusts_patients.rds"))
+
+  rm(nhs_trusts_patients,
      nhs_trusts_catchment_areas_filename)
 
 
