@@ -24,6 +24,10 @@ calcInternalMigration <- function(sites_csv,
 
   lad20_areas <- msoa11_lad20_lookup[msoa11 %in% catchment_areas$msoa11, unique(lad20)]
 
+  # One of our LADs changed between 2020 and 2023, so need to replace this with updated code
+  lad20_areas[lad20_areas == "E07000188"] <- "E06000066"
+  stopifnot(sum(!(lad20_areas %in% lad23_2024_internal_migration$lad23_out)) == 0)
+
   lad23_2024_internal_migration[lad23_in %in% lad20_areas &
                                   !(lad23_out %in% lad20_areas),
                                 formatC(round(sum(people),
