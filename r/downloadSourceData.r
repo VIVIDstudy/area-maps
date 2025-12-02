@@ -39,7 +39,7 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
 
   # MSOA 2011 boundaries
 
-  england_wales_msoa11_goem_filepath <- downloadArcGISGeoPackage("54bc14349a5543d7996e7a1e3565dd06",
+  england_wales_msoa11_goem_filepath <- downloadArcGISData("54bc14349a5543d7996e7a1e3565dd06",
                                                                directory_path = data_raw_directory)
 
   england_wales_msoa11_goem <- sf::st_read(england_wales_msoa11_goem_filepath,
@@ -54,7 +54,7 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
 
   # UK Countries (December 2024) boundaries
 
-  uk_countries_goem_filepath <- downloadArcGISGeoPackage("6f18dfc308d04372929dea6afa44b2c7",
+  uk_countries_goem_filepath <- downloadArcGISData("6f18dfc308d04372929dea6afa44b2c7",
                                                          directory_path = data_raw_directory)
 
   uk_countries_goem <- sf::st_read(uk_countries_goem_filepath,
@@ -69,7 +69,7 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
 
   # Towns and Cities (December 2015) boundaries
 
-  towns_cities_goem_filepath <- downloadArcGISGeoPackage("63a109c64a64410488d39c886152c162",
+  towns_cities_goem_filepath <- downloadArcGISData("63a109c64a64410488d39c886152c162",
                                                          directory_path = data_raw_directory)
 
   towns_cities_goem <- sf::st_read(towns_cities_goem_filepath,
@@ -167,6 +167,61 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
 
   rm(nhs_trusts_patients,
      nhs_trusts_catchment_areas_filename)
+
+  # MSOA2011 to LAD2020 lookup
+  msoa11_to_lad20_lookup_filepath <- downloadArcGISData("e8fef92ac4114c249ffc1ff3ccf22e12",
+                                                        directory_path = data_raw_directory,
+                                                        export_type = "csv")
+
+  msoa11_to_lad20_lookup <- data.table::fread(msoa11_to_lad20_lookup_filepath,
+                                              header = TRUE,
+                                              select = c(2, 4, 6),
+                                              col.names = c("lsoa11",
+                                                            "msoa11",
+                                                            "lad20"))
+
+  saveRDS(msoa11_to_lad20_lookup,
+          file = paste0(data_directory,
+                        "/msoa11_to_lad20_lookup.rds"))
+
+  rm(msoa11_to_lad20_lookup,
+     msoa11_to_lad20_lookup_filepath)
+
+  # ONS internal migration data 2024
+
+  utils::download.file("https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/internalmigrationinenglandandwales/detailedinternalmigrationestimates20242023localauthorities/detailedestimates2024on2023las.xlsx",
+                       paste0(data_raw_directory,
+                              "/detailedestimates2024on2023las.xlsx"),
+                       headers = c("User-Agent" = getUserAgent()))
+
+  lad20_2024_internal_migration_filename <- paste0(data_raw_directory,
+                                                   "/detailedestimates2024on2023las.xlsx")
+
+  lad20_2024_internal_migration <- openxlsx::read.xlsx(lad20_2024_internal_migration_filename,
+                                                sheet = "IM2024 on 2023 LAs") |>
+    data.table::setDT()
+
+  age_cols <- colnames(lad20_2024_internal_migration)[substr(colnames(lad20_2024_internal_migration), 1, 4) == "Age_"]
+
+  lad20_2024_internal_migration[, all_ages := Reduce(`+`, .SD),
+                                .SDcols = age_cols]
+  lad20_2024_internal_migration[, c(age_cols, "year") := NULL]
+  lad20_2024_internal_migration <- lad20_2024_internal_migration[, .(people = sum(all_ages)),
+                                                                 by = .(outla,
+                                                                        inla)]
+
+  data.table::setnames(lad20_2024_internal_migration,
+                       c("outla",
+                         "inla"),
+                       c("lad23_out",
+                         "lad23_in"))
+
+  saveRDS(lad20_2024_internal_migration,
+          file = paste0(data_directory,
+                        "/lad23_2024_internal_migration.rds"))
+
+  rm(lad20_2024_internal_migration,
+     lad20_2024_internal_migration_filename)
 
 
   return(TRUE)

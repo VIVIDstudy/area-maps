@@ -1,4 +1,4 @@
-#' Download ArcGIS GeoPackage
+#' Download ArcGIS Data
 #'
 #' Download an ArcGIS-hosted GeoPackage file.
 #'
@@ -6,12 +6,16 @@
 #' @param directory_path Character vector of length one, the path of the directory in which the file will be saved
 #'
 #' @return A character vector, of length one, of the downloaded GeoPackage file
-downloadArcGISGeoPackage <- function(arcgis_id,
-                                     directory_path = "") {
+downloadArcGISData <- function(arcgis_id,
+                               directory_path = "",
+                               export_type = "geoPackage") {
 
   url <- paste0("https://hub.arcgis.com/api/download/v1/items/",
                 arcgis_id,
-                "/geoPackage?redirect=false&layers=0")
+                "/",
+                export_type,
+                "?redirect=false&layers=0")
+
   user_agent_string <- getUserAgent()
 
   i = 0
@@ -27,7 +31,7 @@ downloadArcGISGeoPackage <- function(arcgis_id,
     Sys.sleep(0.3)
   }
   if(is.null(download_request_body$resultUrl)) {
-    warning("Request for ArcGIS GeoPackage download failed.")
+    warning("Request for ArcGIS download failed.")
     return(FALSE)
   }
 

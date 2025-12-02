@@ -1,5 +1,5 @@
 library(data.table)
-source("r/downloadArcGISGeoPackage.r")
+source("r/downloadArcGISData.r")
 source("r/downloadExtractZipFile.r")
 source("r/downloadSourceData.r")
 source("r/getUserAgent.r")
