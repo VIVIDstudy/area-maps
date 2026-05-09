@@ -223,6 +223,31 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
   rm(lad20_2024_internal_migration,
      lad20_2024_internal_migration_filename)
 
+  # NHS Trust info
+
+  nhs_acute_trusts <- jsonlite::fromJSON("https://directory.spineservices.nhs.uk/ORD/2-0-0/organisations?_format=text/json&PrimaryRoleId=197&Limit=1000")[[1]] |>
+    data.table::setDT()
+
+  fields_to_retain <- data.table::data.table(old_name = c("Name",
+                                                          "OrgId",
+                                                          "PostCode",
+                                                          "OrgLink"),
+                                             new_name = c("trust_name",
+                                                          "ods_code",
+                                                          "postcode",
+                                                          "ods_api_link"))
+
+  fields_to_drop <- colnames(nhs_acute_trusts)[!(colnames(nhs_acute_trusts) %in% fields_to_retain$old_name)]
+
+  nhs_acute_trusts[, (fields_to_drop) := NULL]
+  data.table::setnames(nhs_acute_trusts,
+                       fields_to_retain$old_name,
+                       fields_to_retain$new_name)
+
+
+  saveRDS(nhs_acute_trusts,
+          file = paste0(data_directory,
+                        "/nhs_acute_trusts.rds"))
 
   return(TRUE)
 }
