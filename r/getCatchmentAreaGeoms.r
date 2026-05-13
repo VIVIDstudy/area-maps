@@ -13,13 +13,13 @@ getCatchmentAreaGeoms <- function(data_directory,
                                   crs = 27700,
                                   save = FALSE) {
 
-  england_wales_msoa11_goem <- readRDS(file = paste0(data_directory,
-                                                     "/england_wales_msoa11_goem.rds"))
+  england_wales_msoa21_goem <- readRDS(file = paste0(data_directory,
+                                                     "/england_wales_msoa21_goem.rds"))
 
-  catchment_areas_geom_27700 <- merge(england_wales_msoa11_goem,
+  catchment_areas_geom_27700 <- merge(england_wales_msoa21_goem,
                                       catchment_areas,
-                                      by.x = "MSOA11CD",
-                                      by.y = "msoa11",
+                                      by.x = "MSOA21CD",
+                                      by.y = "msoa21",
                                       all = FALSE) |>
     sf::st_buffer(20) |>
     sf::st_union() |>

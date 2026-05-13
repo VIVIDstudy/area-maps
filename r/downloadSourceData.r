@@ -14,43 +14,43 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
   if(!dir.exists(data_raw_directory)) dir.create(data_raw_directory)
   if(!dir.exists(data_directory)) dir.create(data_directory)
 
-  # postcode lookup (NHS 2025 August)
+  # postcode lookup (NSPL 2026 Feb)
 
-  postcode_to_bng_msoa11_lookup_filepath <- downloadExtractZipFile(url = "https://www.arcgis.com/sharing/rest/content/items/402152391b1f459598a8ce5bed1b6cf8/data",
+  postcode_to_bng_msoa21_lookup_filepath <- downloadExtractZipFile(url = "https://www.arcgis.com/sharing/rest/content/items/36b718ad00de49afb9ad364f8b815b9e/data",
                                                             unzip_directory = data_raw_directory,
-                                                            unzip_files = "Data/nhg25aug.csv")
+                                                            unzip_files = "Data/NSPL_FEB_2026_UK.csv")
 
-  postcode_to_bng_msoa11_lookup <- data.table::fread(postcode_to_bng_msoa11_lookup_filepath,
-                                              header = FALSE,
-                                              select = c(2,37:38,41),
+  postcode_to_bng_msoa21_lookup <- data.table::fread(postcode_to_bng_msoa21_lookup_filepath,
+                                              header = TRUE,
+                                              select = c(3,7:8,23),
                                               col.names = c("postcode",
                                                             "oseast1m",
                                                             "osnrth1m",
-                                                            "msoa11"))
+                                                            "msoa21"))
 
-  saveRDS(postcode_to_bng_msoa11_lookup,
+  saveRDS(postcode_to_bng_msoa21_lookup,
           file = paste0(data_directory,
-                        "/postcode_to_bng_msoa11_lookup.rds"))
+                        "/postcode_to_bng_msoa21_lookup.rds"))
 
-  rm(postcode_to_bng_msoa11_lookup,
-     postcode_to_bng_msoa11_lookup_filepath)
+  rm(postcode_to_bng_msoa21_lookup,
+     postcode_to_bng_msoa21_lookup_filepath)
 
 
 
-  # MSOA 2011 boundaries
+  # MSOA 2021 boundaries
 
-  england_wales_msoa11_goem_filepath <- downloadArcGISData("54bc14349a5543d7996e7a1e3565dd06",
+  england_wales_msoa21_goem_filepath <- downloadArcGISData("6b282db29762450881ed5159259a6e4e",
                                                                directory_path = data_raw_directory)
 
-  england_wales_msoa11_goem <- sf::st_read(england_wales_msoa11_goem_filepath,
-                                         query = "SELECT * FROM MSOA_2011_EW_BGC_V3")
+  england_wales_msoa21_goem <- sf::st_read(england_wales_msoa21_goem_filepath,
+                                         query = "SELECT * FROM MSOA_2021_EW_BGC_V3")
 
-  saveRDS(england_wales_msoa11_goem,
+  saveRDS(england_wales_msoa21_goem,
           file = paste0(data_directory,
-                        "/england_wales_msoa11_goem.rds"))
+                        "/england_wales_msoa21_goem.rds"))
 
-  rm(england_wales_msoa11_goem,
-     england_wales_msoa11_goem_filepath)
+  rm(england_wales_msoa21_goem,
+     england_wales_msoa21_goem_filepath)
 
   # UK Countries (December 2024) boundaries
 
@@ -82,110 +82,212 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
   rm(towns_cities_goem,
      towns_cities_goem_filepath)
 
-  # ONS mid-year 2020 MSOA (2011) population estimates
+  # ONS mid-year 2022 MSOA (2021) population estimates
 
-  utils::download.file("https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimates/mid2020sape23dt4/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx",
+  utils::download.file("https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics/mid2022revisednov2025tomid2024/sapemsoaquinaryage20222024.xlsx",
                        paste0(data_raw_directory,
-                              "/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx"),
+                              "/sapemsoaquinaryage20222024.xlsx"),
                        headers = c("User-Agent" = getUserAgent()))
 
-  msoa11_2020_population_filename <- paste0(data_raw_directory,
-                                    "/sape23dt4mid2020msoasyoaestimatesunformatted.xlsx")
+  msoa21_2024_population_filename <- paste0(data_raw_directory,
+                                    "/sapemsoaquinaryage20222024.xlsx")
 
-  msoa11_2020_population <- openxlsx::read.xlsx(msoa11_2020_population_filename,
-                                                sheet = "Mid-2020 Persons",
-                                                startRow = 5,
-                                                cols = c(1,7)) |>
+  msoa21_2024_population <- openxlsx::read.xlsx(msoa21_2024_population_filename,
+                                                sheet = "Mid-2024 MSOA 2021",
+                                                startRow = 4,
+                                                cols = c(3,5)) |>
     data.table::setDT()
 
-  data.table::setnames(msoa11_2020_population,
-                       c("MSOA.Code",
-                         "All.Ages"),
-                       c("msoa11",
+  data.table::setnames(msoa21_2024_population,
+                       c("MSOA.2021.Code",
+                         "Total"),
+                       c("msoa21",
                          "population"))
 
-  saveRDS(msoa11_2020_population,
+  saveRDS(msoa21_2024_population,
           file = paste0(data_directory,
-                        "/msoa11_2020_population.rds"))
+                        "/msoa21_2024_population.rds"))
 
-  rm(msoa11_2020_population,
-     msoa11_2020_population_filename)
+  rm(msoa21_2024_population,
+     msoa21_2024_population_filename)
 
 
-  # OHID MSOA catchment populations
-  # Download from https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl/file/976234504165
+  # OHID MSOA 2026 catchment populations
 
-  nhs_trusts_catchment_areas_filename <- paste0(data_raw_directory,
-                                                "/2022 Trust Catchment Populations_Supplementary MSOA Analysis.xlsx")
+  utils::download.file("https://assets.publishing.service.gov.uk/media/69fdb80d2a6137e93226b8ac/nhs-acute-hospital-trust-catchment-populations-data_tables-april-2026.ods",
+                       paste0(data_raw_directory,
+                              "/nhs-acute-hospital-trust-catchment-populations-data_tables-april-2026.ods"),
+                       headers = c("User-Agent" = getUserAgent()))
 
-  nhs_trusts_catchment_areas <- openxlsx::read.xlsx(nhs_trusts_catchment_areas_filename,
-                                                    sheet = "Emergency",
-                                                    cols = c(1,3:5,11)) |>
+
+  nhs_trusts_catchment_areas_2026_filename <- paste0(data_raw_directory,
+                                                     "/nhs-acute-hospital-trust-catchment-populations-data_tables-april-2026.ods")
+
+  nhs_trusts_catchment_areas_2026 <- readODS::read_ods(nhs_trusts_catchment_areas_2026_filename,
+                                                       sheet = "Emergency",
+                                                       skip = 2,
+                                                       as_tibble = FALSE) |>
     data.table::setDT()
+  gc()
 
-  data.table::setnames(nhs_trusts_catchment_areas,
-                       c("CatchmentYear",
-                         "msoa",
-                         "TrustCode",
-                         "TrustName",
-                         "FPTP"),
-                       c("year",
-                         "msoa11",
-                         "ods_code",
-                         "trust_name",
-                         "largest_share_in_msoa"))
+  data.table::setnames(nhs_trusts_catchment_areas_2026,
+                       make.names(colnames(nhs_trusts_catchment_areas_2026),
+                                  unique = TRUE))
 
-  saveRDS(nhs_trusts_catchment_areas,
+  nhs_trusts_catchment_areas_2026_fields <- data.frame(
+    old_names = c("Catchment..year",
+                  "Trust..code",
+                  "Trust..name",
+                  "MSOA21CD",
+                  "First.past..the.post..FPTP."),
+    new_names = c("year",
+                  "ods_code",
+                  "trust_name",
+                  "msoa21",
+                  "largest_share_in_msoa")
+  )
+
+  nhs_trusts_catchment_areas_2026_fields_to_remove <-
+    colnames(nhs_trusts_catchment_areas_2026)[
+      !(colnames(nhs_trusts_catchment_areas_2026) %in% nhs_trusts_catchment_areas_2026_fields$old_names)
+    ]
+
+  nhs_trusts_catchment_areas_2026[, (nhs_trusts_catchment_areas_2026_fields_to_remove) := NULL]
+
+  data.table::setnames(
+    nhs_trusts_catchment_areas_2026,
+    nhs_trusts_catchment_areas_2026_fields$old_names,
+    nhs_trusts_catchment_areas_2026_fields$new_names
+  )
+
+  saveRDS(nhs_trusts_catchment_areas_2026,
           file = paste0(data_directory,
-                        "/nhs_trusts_catchment_areas.rds"))
+                        "/nhs_trusts_catchment_areas_2026.rds"))
 
-  rm(nhs_trusts_catchment_areas)
+  rm(nhs_trusts_catchment_areas_2026,
+     nhs_trusts_catchment_areas_2026_fields,
+     nhs_trusts_catchment_areas_2026_fields_to_remove)
 
 
-  nhs_trusts_patients <- openxlsx::read.xlsx(nhs_trusts_catchment_areas_filename,
-                                                    sheet = "All Admissions",
-                                                    cols = c(1,3:6,11)) |>
+  nhs_trusts_patients <- readODS::read_ods(nhs_trusts_catchment_areas_2026_filename,
+                                           sheet = "All_admissions",
+                                           skip = 2,
+                                           as_tibble = FALSE) |>
     data.table::setDT()
+  gc()
 
   data.table::setnames(nhs_trusts_patients,
-                       c("CatchmentYear",
-                         "msoa",
-                         "TrustCode",
-                         "TrustName",
-                         "patients",
-                         "FPTP"),
-                       c("year",
-                         "msoa11",
-                         "ods_code",
-                         "trust_name",
-                         "msoa_trust_patients_3years",
-                         "largest_share_in_msoa"))
+                       make.names(colnames(nhs_trusts_patients),
+                                  unique = TRUE))
+
+  nhs_trusts_patients_fields <- data.frame(
+    old_names = c("Catchment..year",
+                  "Trust..code",
+                  "Trust..name",
+                  "MSOA21CD",
+                  "Patients..admitted",
+                  "First.past..the.post..FPTP."),
+    new_names = c("year",
+                  "ods_code",
+                  "trust_name",
+                  "msoa21",
+                  "msoa_trust_patients_3years",
+                  "largest_share_in_msoa")
+  )
+
+  nhs_trusts_patients_fields_to_remove <-
+    colnames(nhs_trusts_patients)[
+      !(colnames(nhs_trusts_patients) %in% nhs_trusts_patients_fields$old_names)
+    ]
+
+  nhs_trusts_patients[, (nhs_trusts_patients_fields_to_remove) := NULL]
+
+  data.table::setnames(
+    nhs_trusts_patients,
+    nhs_trusts_patients_fields$old_names,
+    nhs_trusts_patients_fields$new_names
+  )
 
   saveRDS(nhs_trusts_patients,
           file = paste0(data_directory,
                         "/nhs_trusts_patients.rds"))
 
   rm(nhs_trusts_patients,
-     nhs_trusts_catchment_areas_filename)
+     nhs_trusts_patients_fields,
+     nhs_trusts_patients_fields_to_remove,
+     nhs_trusts_catchment_areas_2026_filename)
 
-  # MSOA2011 to LAD2020 lookup
-  msoa11_to_lad20_lookup_filepath <- downloadArcGISData("e8fef92ac4114c249ffc1ff3ccf22e12",
+
+  # OHID MSOA 2022 catchment populations - for Frimley
+  # Download from https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl/file/976234504165
+
+  nhs_trusts_catchment_areas_2022_filename <- paste0(data_raw_directory,
+                                                "/2022 Trust Catchment Populations_Supplementary MSOA Analysis.xlsx")
+
+  nhs_trusts_catchment_areas_2022 <- openxlsx::read.xlsx(nhs_trusts_catchment_areas_2022_filename,
+                                                    sheet = "Emergency",
+                                                    cols = c(1,3:5,11)) |>
+    data.table::setDT()
+
+  data.table::setnames(nhs_trusts_catchment_areas_2022,
+                       c("CatchmentYear",
+                         "msoa",
+                         "TrustCode",
+                         "TrustName",
+                         "FPTP"),
+                       c("year",
+                         "msoa11",
+                         "ods_code",
+                         "trust_name",
+                         "largest_share_in_msoa"))
+
+  saveRDS(nhs_trusts_catchment_areas_2022,
+          file = paste0(data_directory,
+                        "/nhs_trusts_catchment_areas_2022.rds"))
+
+  rm(nhs_trusts_catchment_areas_2022,
+     nhs_trusts_catchment_areas_2022_filename)
+
+
+  # MSOA2011 to MSOA2021 lookup (exact fit)
+
+  msoa11_to_msoa21_lookup_filepath <- downloadArcGISData("fe04322006bd47bbb5f9a784b05d87da",
                                                         directory_path = data_raw_directory,
                                                         export_type = "csv")
 
-  msoa11_to_lad20_lookup <- data.table::fread(msoa11_to_lad20_lookup_filepath,
+  msoa11_to_msoa21_lookup <- data.table::fread(msoa11_to_msoa21_lookup_filepath,
                                               header = TRUE,
-                                              select = c(2, 4, 6),
-                                              col.names = c("lsoa11",
-                                                            "msoa11",
-                                                            "lad20"))
+                                              select = c(1, 4),
+                                              col.names = c("msoa11",
+                                                            "msoa21"))
 
-  saveRDS(msoa11_to_lad20_lookup,
+  saveRDS(msoa11_to_msoa21_lookup,
           file = paste0(data_directory,
-                        "/msoa11_to_lad20_lookup.rds"))
+                        "/msoa11_to_msoa21_lookup.rds"))
 
-  rm(msoa11_to_lad20_lookup,
-     msoa11_to_lad20_lookup_filepath)
+  rm(msoa11_to_msoa21_lookup,
+     msoa11_to_msoa21_lookup_filepath)
+
+
+
+  # MSOA2021 to LAD2022 lookup
+  msoa21_to_lad22_lookup_filepath <- downloadArcGISData("b9ca90c10aaa4b8d9791e9859a38ca67",
+                                                        directory_path = data_raw_directory,
+                                                        export_type = "csv")
+
+  msoa21_to_lad22_lookup <- data.table::fread(msoa21_to_lad22_lookup_filepath,
+                                              header = TRUE,
+                                              select = c(2, 5, 8),
+                                              col.names = c("lsoa21",
+                                                            "msoa21",
+                                                            "lad22"))
+
+  saveRDS(msoa21_to_lad22_lookup,
+          file = paste0(data_directory,
+                        "/msoa21_to_lad22_lookup.rds"))
+
+  rm(msoa21_to_lad22_lookup,
+     msoa21_to_lad22_lookup_filepath)
 
   # ONS internal migration data 2024
 
@@ -194,36 +296,36 @@ downloadSourceData <- function(data_raw_directory = "data-raw",
                               "/detailedestimates2024on2023las.xlsx"),
                        headers = c("User-Agent" = getUserAgent()))
 
-  lad20_2024_internal_migration_filename <- paste0(data_raw_directory,
+  lad23_2024_internal_migration_filename <- paste0(data_raw_directory,
                                                    "/detailedestimates2024on2023las.xlsx")
 
-  lad20_2024_internal_migration <- openxlsx::read.xlsx(lad20_2024_internal_migration_filename,
+  lad23_2024_internal_migration <- openxlsx::read.xlsx(lad23_2024_internal_migration_filename,
                                                 sheet = "IM2024 on 2023 LAs") |>
     data.table::setDT()
 
-  age_cols <- colnames(lad20_2024_internal_migration)[substr(colnames(lad20_2024_internal_migration), 1, 4) == "Age_"]
+  age_cols <- colnames(lad23_2024_internal_migration)[substr(colnames(lad23_2024_internal_migration), 1, 4) == "Age_"]
 
-  lad20_2024_internal_migration[, all_ages := Reduce(`+`, .SD),
+  lad23_2024_internal_migration[, all_ages := Reduce(`+`, .SD),
                                 .SDcols = age_cols]
-  lad20_2024_internal_migration[, c(age_cols, "year") := NULL]
-  lad20_2024_internal_migration <- lad20_2024_internal_migration[, .(people = sum(all_ages)),
+  lad23_2024_internal_migration[, c(age_cols, "year") := NULL]
+  lad23_2024_internal_migration <- lad23_2024_internal_migration[, .(people = sum(all_ages)),
                                                                  by = .(outla,
                                                                         inla)]
 
-  data.table::setnames(lad20_2024_internal_migration,
+  data.table::setnames(lad23_2024_internal_migration,
                        c("outla",
                          "inla"),
                        c("lad23_out",
                          "lad23_in"))
 
-  saveRDS(lad20_2024_internal_migration,
+  saveRDS(lad23_2024_internal_migration,
           file = paste0(data_directory,
                         "/lad23_2024_internal_migration.rds"))
 
-  rm(lad20_2024_internal_migration,
-     lad20_2024_internal_migration_filename)
+  rm(lad23_2024_internal_migration,
+     lad23_2024_internal_migration_filename)
 
-  # NHS Trust info
+  # NHS Trust code, name and postcode data
 
   nhs_acute_trusts <- jsonlite::fromJSON("https://directory.spineservices.nhs.uk/ORD/2-0-0/organisations?_format=text/json&PrimaryRoleId=197&Limit=1000")[[1]] |>
     data.table::setDT()

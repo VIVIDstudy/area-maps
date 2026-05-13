@@ -14,6 +14,9 @@ source("r/plotSites.r")
 
 
 downloadSourceData()
+
+
+
 prepareInteractiveData(sites_csv = "data-raw/sites.csv")
 calcCatchmentPopulations(sites_csv = "data-raw/sites.csv")
 

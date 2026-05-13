@@ -17,13 +17,13 @@ prepareInteractiveData <- function(sites_csv,
                                           data_directory)
 
   # Catchment area boundaries
-  england_wales_msoa11_goem <- readRDS(file = paste0(data_directory,
-                                                     "/england_wales_msoa11_goem.rds"))
+  england_wales_msoa21_goem <- readRDS(file = paste0(data_directory,
+                                                     "/england_wales_msoa21_goem.rds"))
 
-  site_catchment_areas_4326 <- merge(england_wales_msoa11_goem,
+  site_catchment_areas_4326 <- merge(england_wales_msoa21_goem,
                                      catchment_areas,
-                                     by.x = "MSOA11CD",
-                                     by.y = "msoa11",
+                                     by.x = "MSOA21CD",
+                                     by.y = "msoa21",
                                      all = FALSE) |>
     sf::st_buffer(20) |>
     sf::st_union() |>
@@ -34,17 +34,17 @@ prepareInteractiveData <- function(sites_csv,
           paste0(dataout_directory,
                  "/site_catchment_areas_4326.rds"))
 
-  rm(england_wales_msoa11_goem,
+  rm(england_wales_msoa21_goem,
      site_catchment_areas_4326)
 
   # postcode lookups
-  postcode_to_bng_msoa11_lookup <- readRDS(file = paste0(data_directory,
-                                                         "/postcode_to_bng_msoa11_lookup.rds"))
+  postcode_to_bng_msoa21_lookup <- readRDS(file = paste0(data_directory,
+                                                         "/postcode_to_bng_msoa21_lookup.rds"))
 
   ## Remove NHS pseudo-postcodes
-  postcode_to_bng_msoa11_lookup <- postcode_to_bng_msoa11_lookup[substr(postcode, 1, 4) != "ZZ99"]
+  postcode_to_bng_msoa21_lookup <- postcode_to_bng_msoa21_lookup[substr(postcode, 1, 4) != "ZZ99"]
 
-  postcode_uk_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) != "BT",
+  postcode_uk_geom_4326 <- postcode_to_bng_msoa21_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) != "BT",
                                                          .(postcode,
                                                            oseast1m,
                                                            osnrth1m)] |>
@@ -53,7 +53,7 @@ prepareInteractiveData <- function(sites_csv,
                  crs = 27700) |>
     sf::st_transform(4326)
 
-  # postcode_ni_geom_4326 <- postcode_to_bng_msoa11_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) == "BT",
+  # postcode_ni_geom_4326 <- postcode_to_bng_msoa21_lookup[!is.na(oseast1m) & substr(postcode, 1, 2) == "BT",
   #                                                        .(postcode,
   #                                                          oseast1m,
   #                                                          osnrth1m)] |>
@@ -83,9 +83,9 @@ prepareInteractiveData <- function(sites_csv,
   postcode_latlong[, ':=' (longitude = round(longitude, 5),
                            latitude = round(latitude, 5))]
 
-  postcode_catchment_area_lookup <- merge(postcode_to_bng_msoa11_lookup,
+  postcode_catchment_area_lookup <- merge(postcode_to_bng_msoa21_lookup,
                                           catchment_areas,
-                                          by = "msoa11",
+                                          by = "msoa21",
                                           all.x = TRUE)
 
   postcode_catchment_area_lookup <- merge(postcode_catchment_area_lookup,
@@ -93,7 +93,7 @@ prepareInteractiveData <- function(sites_csv,
                                           by = "postcode",
                                           all.x = TRUE)
 
-  rm(postcode_to_bng_msoa11_lookup,
+  rm(postcode_to_bng_msoa21_lookup,
      postcode_latlong,
      catchment_areas)
   gc()
@@ -111,7 +111,7 @@ prepareInteractiveData <- function(sites_csv,
 
   postcode_catchment_area_lookup <- postcode_catchment_area_lookup[(district_in_catchment_area)]
 
-  postcode_catchment_area_lookup[, c("msoa11",
+  postcode_catchment_area_lookup[, c("msoa21",
                                      "oseast1m",
                                      "osnrth1m",
                                      "ods_name",

@@ -13,18 +13,28 @@ calcCatchmentPopulations <- function(sites_csv,
 
   if(!dir.exists(dataout_directory)) dir.create(dataout_directory)
 
+  sites <- data.table::fread(sites_csv,
+                             select = c("site_name",
+                                        "ods_name",
+                                        "ods_code"))
+
+  #   ###########################################################################
+  #   Fix issue with OHID excluding NORTH MIDDLESEX UNIVERSITY HOSPITAL NHS TRUST
+  sites <- sites[ods_name != "NORTH MIDDLESEX UNIVERSITY HOSPITAL NHS TRUST"]
+  #   ###########################################################################
+
   catchment_areas <- getNhsCatchmentAreas(sites_csv,
                                           data_directory)
 
-  msoa11_2020_population <- readRDS(paste0(data_directory,
-                                           "/msoa11_2020_population.rds"))
+  msoa21_2024_population <- readRDS(paste0(data_directory,
+                                           "/msoa21_2024_population.rds"))
 
   nhs_trusts_patients <- readRDS(file = paste0(data_directory,
                                                       "/nhs_trusts_patients.rds"))
 
   site_patients_ex_catchments <- merge(sites,
-                                       nhs_trusts_patients[year == 2020 &
-                                                             !(msoa11 %in% catchment_areas$msoa11)],
+                                       nhs_trusts_patients[year == 2024 &
+                                                             !(msoa21 %in% catchment_areas$msoa21)],
                                        by = "ods_code",
                                        all.x = TRUE)
 
@@ -38,8 +48,8 @@ calcCatchmentPopulations <- function(sites_csv,
 
 
   catchment_area_populations <- merge(catchment_areas,
-                                      msoa11_2020_population,
-                                      by = "msoa11",
+                                      msoa21_2024_population,
+                                      by = "msoa21",
                                       all.x = TRUE)
 
 
@@ -47,10 +57,12 @@ calcCatchmentPopulations <- function(sites_csv,
     warning("Not all MSOAs found in population data.")
   }
 
-  catchment_area_populations <- catchment_area_populations[,
-                                                           .(catchment_population = sum(population)),
-                                                           by = .(site_name,
-                                                                  ods_name)]
+  catchment_area_populations <- catchment_area_populations[
+    ,
+    .(catchment_population = sum(population)),
+    by = .(site_name,
+           ods_name)
+  ]
 
 
   catchment_area_populations_site_patients <- merge(site_patients_ex_catchments,
@@ -79,5 +91,5 @@ calcCatchmentPopulations <- function(sites_csv,
                                                                                                         na.rm = TRUE))])
 
   data.table::fwrite(catchment_area_populations_site_patients,
-                     file = "data-out/catchment_area_2020_populations_site_patients_2018-2021.csv")
+                     file = "data-out/catchment_area_2024_populations_site_patients_2022-2025.csv")
 }
